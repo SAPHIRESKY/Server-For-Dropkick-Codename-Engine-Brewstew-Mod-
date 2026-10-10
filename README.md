@@ -1,32 +1,45 @@
-# Dropkick Worldwide Relay
+# Dropkick Relay Servers
 
-This small public HTTP relay provides six-character room codes for the Codename Engine Dropkick mod. It carries lobby messages, guest input, and host-authoritative game snapshots. It does not need a database or any npm dependencies beyond Node itself.
+## Recommended for the current Codename Engine mod: Railway TCP relay
 
-## Deploy it publicly (Render example)
+**Do not run `npm start` in the game mod folder.** The current game's online code uses raw TCP sockets, so the compatible server is the Python TCP relay in `railway-tcp-relay/`. The root `Dockerfile` is configured to build and run that relay directly when this repository is deployed to Railway.
 
-1. Make a new Git repository for the relay.
-2. Upload the **contents** of this ZIP so `render.yaml` is at the repository root and `server/index.js` / `server/package.json` are under `server/`.
-3. On Render, choose **New → Blueprint**, connect that repository, and apply the Blueprint. The included Blueprint sets up a public Node web service with `server/` as its root directory and `/health` as the health check.
-4. When deployment succeeds, open `https://YOUR-SERVICE.onrender.com/health`. It should return JSON with `"ok":true`.
-5. In the installed mod, edit `mods/DropkickCNE_Mod/data/global.hx` and set `dropkickOnlineServer` to that URL, including `https://` and omitting a final slash.
-6. Restart Codename Engine. Every person who hosts or joins must use a mod configured with the same relay URL.
+### One-time Railway setup
 
-Render's Blueprint format allows a `render.yaml` at a repository root and a service `rootDir` for the application subdirectory; the included config uses that layout. See the official references: https://render.com/docs/blueprint-spec and https://render.com/docs/web-services.
+1. In Railway, create a new project and choose **Deploy from GitHub Repo**.
+2. Select this repository and leave **Root Directory** at its default repository root (`/` or blank). The root `Dockerfile` builds the TCP relay.
+3. Set the service variable `PORT=27666`.
+4. In the service's **Settings → Networking**, create a **TCP Proxy** for internal port `27666`. Railway assigns a public hostname and public port.
+5. In both players' copies of the game, open `mods/Dropkick/data/global.hx` and set:
+   ```haxe
+   static var dropkickRoomServerHost:String = "THE_PUBLIC_TCP_HOSTNAME";
+   static var dropkickRoomServerPort:Int = THE_PUBLIC_TCP_PORT;
+   ```
+   Replace the examples with the exact hostname and numeric public port Railway assigned. Do not include `tcp://`, `http://`, or `https://` in the hostname.
+6. Restart both games. The host creates a six-character code, and the friend joins using that code. Neither player runs a server on their own PC or forwards home-router ports.
 
-## Local smoke test
+Railway's TCP Proxy exposes raw TCP services and generates the public hostname and proxy port; see the official guide: https://docs.railway.com/networking/tcp-proxy.
 
-From the relay repo root:
+### Local test (optional only)
 
-```sh
-cd server
-npm start
+The relay is Python, not Node. To test on the same PC only:
+```powershell
+cd railway-tcp-relay
+py -3 dropkick_room_server.py --host 127.0.0.1 --port 27666
 ```
+This loopback command is not the public hosting setup. You do not need to start the server on your PC after the Railway service is running.
 
-Then visit `http://localhost:3000/health`.
+### Verify deployment
 
-## Behavior / limits
+- Startup log: `Dropkick room-code relay listening on 0.0.0.0:27666/TCP`.
+- Host create: `Received create handshake`, then `Room CODE created`.
+- Friend join: `Received join handshake`, then `Room CODE paired successfully`.
+- If the game reports no reply, verify both clients use the exact same public TCP hostname and port and that the Railway service is deployed.
 
-- Rooms are held in memory and expire after 35 minutes without activity.
-- Restarting or sleeping/redeploying the service clears active rooms; players then create a new code.
-- The host simulates physics and sends snapshots; the guest sends input flags. The current relay is intentionally lightweight and does not include matchmaking, user accounts, or anti-cheat.
-- Never publish a room token; the game manages it locally. Share the six-character room code only with the intended guest.
+Rooms are stored in memory. Use one replica and create a new room after a server restart or redeploy. Review Railway's current plans and usage costs before deploying.
+
+## Legacy HTTP relay (Render)
+
+The older Node/HTTP relay is preserved under `server/` with the existing `render.yaml`. It is a different protocol and does **not** speak the raw TCP protocol used by the current `sys.net.Socket` game client. Do not deploy that legacy service for the current TCP client unless the game networking code is separately converted to HTTP.
+
+See `START_HERE_RELAY_DEPLOYMENT.md` and `railway-tcp-relay/README.md` for the current setup.
