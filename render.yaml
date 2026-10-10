@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: dropkick-worldwide-relay
+    runtime: node
+    plan: free
+    region: ohio
+    rootDir: server
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
