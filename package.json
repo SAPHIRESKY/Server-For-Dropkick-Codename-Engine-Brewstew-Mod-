@@ -1,0 +1,9 @@
+{
+  "name": "dropkick-worldwide-relay",
+  "version": "1.0.0",
+  "private": true,
+  "description": "HTTP room-code relay for the Dropkick Codename Engine mod",
+  "main": "index.js",
+  "scripts": { "start": "node index.js" },
+  "engines": { "node": ">=18" }
+}
