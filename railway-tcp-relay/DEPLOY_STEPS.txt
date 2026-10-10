@@ -1,0 +1,25 @@
+DROPKICK ROOM RELAY — QUICK RAILWAY DEPLOY
+==========================================
+
+This folder is the RAW TCP server for the newer Dropkick client that uses
+sys.net.Socket. It is kept separate from the older Node/HTTP server at repo root.
+
+1. In Railway, create a project from this GitHub repository.
+2. Open the new service's settings and set Root Directory to:
+      /railway-tcp-relay
+3. Deploy using the Dockerfile in that folder.
+4. In Variables, set:
+      PORT=27666
+5. In Settings > Networking, create a TCP Proxy for internal port 27666.
+6. Copy the exact public TCP proxy hostname and public port shown by Railway.
+7. In BOTH players' copies, edit mods/Dropkick/data/global.hx:
+      static var dropkickRoomServerHost:String = "YOUR_PUBLIC_TCP_HOST";
+      static var dropkickRoomServerPort:Int = YOUR_PUBLIC_PROXY_PORT;
+   Use the actual values Railway gives you. Do not include tcp:// or https://.
+8. Restart both games. The host creates a room code; the friend enters it.
+9. Neither player runs a local server. Neither player's home router needs
+   port forwarding for the game connection.
+
+Keep the relay at one replica: room data is stored in memory.
+Restarting the service clears rooms, so create a new code after a restart.
+Never share your Railway account password or API token.
