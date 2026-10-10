@@ -1,0 +1,27 @@
+name: Dropkick TCP relay check
+
+on:
+  push:
+    paths:
+      - "railway-tcp-relay/**"
+      - ".github/workflows/relay-smoke-test.yml"
+  pull_request:
+    paths:
+      - "railway-tcp-relay/**"
+      - ".github/workflows/relay-smoke-test.yml"
+  workflow_dispatch:
+
+jobs:
+  smoke-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compile server and test
+        run: |
+          python -m py_compile railway-tcp-relay/dropkick_room_server.py
+          python railway-tcp-relay/tests/smoke_test.py
